@@ -111,7 +111,6 @@
     renderSelectedDay();
   }
 
-  // ✅ UPDATED: mealDay + mealType
   function getMeal(day, type) {
     const meal = mealsData.find(
       m => m.mealDay === day && m.mealType === type
@@ -173,7 +172,7 @@
     document.getElementById("dayView").classList.remove("hidden");
   }
 
-  // ✅ CSV Upload
+  // CSV Upload
   async function uploadCSV() {
     const file = document.getElementById("csvFile").files[0];
 
