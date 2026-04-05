@@ -44,7 +44,7 @@ public class MealService {
         if (existing.isPresent()) {
             Meal m = existing.get();
             m.setItem(meal.getItem());
-            return mealRepository.save(m);
+            return mealRepository.save(m); 
         }
 
         return mealRepository.save(meal);
