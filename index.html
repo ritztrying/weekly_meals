@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weekly Meal Planner</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      background: #f5f5f5;
+    }
+
+    h1 { text-align: center; }
+
+    button {
+      padding: 10px;
+      margin: 5px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+    }
+
+    .container { overflow-x: auto; }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+
+<body>
+
+<h1>🍽️ Weekly Meal Planner</h1>
+
+<div style="text-align:center;">
+  <button onclick="showTable()">Table View</button>
+  <button onclick="showDayView()">Day View</button>
+</div>
+
+<!-- CSV Upload -->
+<div style="text-align:center; margin:20px;">
+  <input type="file" id="csvFile"/>
+  <button onclick="uploadCSV()">Upload CSV</button>
+</div>
+
+<!-- TABLE VIEW -->
+<div id="tableView" class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th>Breakfast</th>
+        <th>Lunch</th>
+        <th>Dinner</th>
+      </tr>
+    </thead>
+    <tbody id="mealTableBody"></tbody>
+  </table>
+</div>
+
+<!-- DAY VIEW -->
+<div id="dayView" class="hidden">
+  <div style="text-align:center;">
+    <select id="daySelector" onchange="renderSelectedDay()"></select>
+  </div>
+  <div id="selectedDayContainer"></div>
+</div>
+
+<script>
+  const API_URL = "http://localhost:8080/meals";
+
+  const days = [
+    "MONDAY","TUESDAY","WEDNESDAY",
+    "THURSDAY","FRIDAY","SATURDAY","SUNDAY"
+  ];
+
+  let mealsData = [];
+
+  async function fetchMeals() {
+    const res = await fetch(API_URL);
+    mealsData = await res.json();
+
+    populateDropdown();
+    renderTable();
+    renderSelectedDay();
+  }
+
+  // ✅ UPDATED: mealDay + mealType
+  function getMeal(day, type) {
+    const meal = mealsData.find(
+      m => m.mealDay === day && m.mealType === type
+    );
+    return meal ? meal.item : "-";
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("mealTableBody");
+    tbody.innerHTML = "";
+
+    days.forEach(day => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${day}</td>
+          <td>${getMeal(day, "BREAKFAST")}</td>
+          <td>${getMeal(day, "LUNCH")}</td>
+          <td>${getMeal(day, "DINNER")}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function populateDropdown() {
+    const selector = document.getElementById("daySelector");
+    selector.innerHTML = "";
+
+    days.forEach(day => {
+      const option = document.createElement("option");
+      option.value = day;
+      option.textContent = day;
+      selector.appendChild(option);
+    });
+
+    const todayIndex = new Date().getDay();
+    selector.selectedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+  }
+
+  function renderSelectedDay() {
+    const day = document.getElementById("daySelector").value;
+
+    document.getElementById("selectedDayContainer").innerHTML = `
+      <div class="card">
+        <h3>${day}</h3>
+        <p><strong>Breakfast:</strong> ${getMeal(day, "BREAKFAST")}</p>
+        <p><strong>Lunch:</strong> ${getMeal(day, "LUNCH")}</p>
+        <p><strong>Dinner:</strong> ${getMeal(day, "DINNER")}</p>
+      </div>
+    `;
+  }
+
+  function showTable() {
+    document.getElementById("tableView").classList.remove("hidden");
+    document.getElementById("dayView").classList.add("hidden");
+  }
+
+  function showDayView() {
+    document.getElementById("tableView").classList.add("hidden");
+    document.getElementById("dayView").classList.remove("hidden");
+  }
+
+  // ✅ CSV Upload
+  async function uploadCSV() {
+    const file = document.getElementById("csvFile").files[0];
+
+    if (!file) {
+      alert("Select file first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(API_URL + "/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const msg = await res.text();
+    alert(msg);
+
+    fetchMeals(); // refresh UI
+  }
+
+  fetchMeals();
+</script>
+
+</body>
+</html>
